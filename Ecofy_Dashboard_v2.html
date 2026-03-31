@@ -1,0 +1,931 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Ecofy – Marketing Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Arial,sans-serif;background:#f0f4f0;color:#1a1a1a;font-size:13px}
+.topbar{background:#1b5e20;padding:10px 20px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;position:sticky;top:0;z-index:200}
+.logo{color:#fff;font-size:17px;font-weight:700;display:flex;align-items:center;gap:7px}
+.logo-box{background:#4caf50;border-radius:6px;padding:3px 7px;font-size:14px}
+.badge{background:rgba(255,255,255,0.18);color:#fff;font-size:10px;padding:3px 10px;border-radius:10px;border:1px solid rgba(255,255,255,0.3)}
+.src-pills{display:flex;gap:7px;margin-left:auto;flex-wrap:wrap}
+.pill{display:flex;align-items:center;gap:4px;background:rgba(255,255,255,0.12);color:#fff;font-size:11px;padding:3px 8px;border-radius:10px}
+.pill-dot{width:7px;height:7px;border-radius:50%}
+
+.filters{background:#fff;border-bottom:2px solid #c8e6c9;padding:9px 20px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.flbl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#555}
+.period-wrap{display:flex;gap:3px}
+.pbtn{padding:5px 11px;font-size:12px;border:1px solid #c8e6c9;border-radius:5px;cursor:pointer;background:#f9fafb;color:#444;transition:all .15s}
+.pbtn.active{background:#2e7d32;color:#fff;border-color:#2e7d32;font-weight:700}
+.pbtn:hover:not(.active){background:#e8f5e9;border-color:#a5d6a7}
+select{font-size:12px;padding:5px 9px;border:1px solid #c8e6c9;border-radius:5px;background:#fff;color:#333;cursor:pointer;min-width:130px}
+select:focus{outline:none;border-color:#2e7d32}
+.custom-dates{display:none;gap:6px;align-items:center}
+.custom-dates input{padding:4px 8px;border:1px solid #c8e6c9;border-radius:5px;font-size:12px}
+.custom-dates.show{display:flex}
+.filter-summary{margin-left:auto;font-size:11px;color:#888;font-style:italic}
+
+.tabs-wrap{background:#fff;border-bottom:2px solid #e8f5e9;padding:0 20px;display:flex}
+.tab{padding:10px 16px;font-size:12px;font-weight:600;cursor:pointer;color:#777;border-bottom:3px solid transparent;background:none;border-top:none;border-left:none;border-right:none;margin-bottom:-2px;transition:all .15s}
+.tab:hover{color:#2e7d32;background:#f9fff9}
+.tab.active{color:#1b5e20;border-bottom-color:#2e7d32}
+.tab-badge{font-size:9px;background:#e8f5e9;color:#1b5e20;padding:1px 5px;border-radius:8px;margin-left:4px}
+
+.main{padding:16px 20px;max-width:1440px;margin:0 auto}
+
+.kpi-row{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:14px}
+.kpi{background:#fff;border-radius:10px;padding:14px 15px;border:1px solid #e8e8e8;border-top:3px solid var(--kc,#2e7d32)}
+.kpi:hover{box-shadow:0 3px 12px rgba(0,0,0,.08);transform:translateY(-1px);transition:all .15s}
+.kpi-lbl{font-size:10px;color:#888;text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px;font-weight:700}
+.kpi-val{font-size:22px;font-weight:700;color:#1a1a1a;line-height:1.1;margin-bottom:4px}
+.kpi-ch{font-size:11px;margin-bottom:2px}
+.up{color:#2e7d32}.down{color:#c62828}.flat{color:#888}
+.kpi-src{font-size:9px;color:#bbb}
+
+.grid2{display:grid;grid-template-columns:1.1fr .9fr;gap:12px;margin-bottom:12px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px}
+.grid4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;margin-bottom:12px}
+.card{background:#fff;border-radius:10px;padding:16px;border:1px solid #e8e8e8}
+.card-h{font-size:13px;font-weight:700;color:#1a1a1a;margin-bottom:3px}
+.card-sub{font-size:10px;color:#aaa;margin-bottom:12px}
+.sec-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#888;padding-bottom:6px;border-bottom:1px solid #f0f0f0;margin-bottom:10px}
+.cw{position:relative;width:100%;height:230px}
+.cw-sm{position:relative;width:100%;height:190px}
+.cw-lg{position:relative;width:100%;height:280px}
+.leg{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:8px;font-size:10px;color:#666}
+.legi{display:flex;align-items:center;gap:4px}
+.legsq{width:10px;height:10px;border-radius:2px}
+
+/* FUNNEL */
+.frow{display:flex;align-items:center;gap:8px;margin-bottom:7px}
+.flabel{font-size:11px;color:#666;width:145px;text-align:right;flex-shrink:0;font-weight:500}
+.ftrack{flex:1;background:#f5f5f5;border-radius:4px;height:28px;overflow:hidden}
+.fbar{height:100%;border-radius:4px;display:flex;align-items:center;padding-left:10px;font-size:11px;font-weight:700;color:#fff;min-width:50px;transition:width .7s ease}
+.fpct{font-size:10px;color:#aaa;width:34px;text-align:right;flex-shrink:0}
+.fsrc{font-size:9px;font-weight:700;width:65px;flex-shrink:0}
+
+/* TABLE ROWS */
+.trow{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f5f5f5;font-size:11px}
+.trow:last-child{border-bottom:none}
+.tname{display:flex;align-items:center;gap:6px;font-weight:600;min-width:90px}
+.tdot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.mbar-wrap{width:80px;background:#f5f5f5;border-radius:3px;height:6px;margin:0 8px;flex-shrink:0}
+.mbar{height:6px;border-radius:3px}
+
+/* OBJ / WEEK */
+.orow{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #f5f5f5;font-size:11px}
+.orow:last-child{border-bottom:none}
+.obadge{font-size:9px;padding:2px 7px;border-radius:3px;font-weight:700}
+.wrow{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid #f5f5f5;font-size:11px}
+.wrow:last-child{border-bottom:none}
+
+/* INSIGHT BAR */
+.insight-card{background:#fff;border-radius:10px;padding:16px;border:1px solid #e8e8e8;margin-bottom:12px}
+.irow{display:flex;align-items:flex-start;gap:8px;padding:7px 0;border-bottom:1px solid #f8f8f8;font-size:12px;color:#444}
+.irow:last-child{border-bottom:none}
+.iicon{width:20px;height:20px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;margin-top:1px}
+.ig{background:#e8f5e9;color:#1b5e20}.ia{background:#fff3e0;color:#e65100}.ib{background:#e3f2fd;color:#0d47a1}
+
+/* DATA TABLE */
+.dt{width:100%;border-collapse:collapse;font-size:11px}
+.dt th{background:#f5f5f5;padding:7px 9px;text-align:left;font-size:10px;color:#777;text-transform:uppercase;letter-spacing:.04em;border-bottom:2px solid #e8e8e8;font-weight:700;white-space:nowrap}
+.dt td{padding:7px 9px;border-bottom:1px solid #f8f8f8;color:#333;white-space:nowrap}
+.dt tr:hover td{background:#f8fff8}
+.dt-wrap{overflow-x:auto;max-height:340px;overflow-y:auto}
+.status-g{background:#e8f5e9;color:#1b5e20;font-size:9px;padding:2px 6px;border-radius:3px;font-weight:700}
+.status-a{background:#fff3e0;color:#e65100;font-size:9px;padding:2px 6px;border-radius:3px;font-weight:700}
+.status-r{background:#fce4ec;color:#c62828;font-size:9px;padding:2px 6px;border-radius:3px;font-weight:700}
+.plat-fb{background:#e3f2fd;color:#0d47a1;font-size:9px;padding:1px 6px;border-radius:3px;font-weight:700}
+.plat-ig{background:#fce4ec;color:#880e4f;font-size:9px;padding:1px 6px;border-radius:3px;font-weight:700}
+.plat-li{background:#e8eaf6;color:#1a237e;font-size:9px;padding:1px 6px;border-radius:3px;font-weight:700}
+
+.tab-panel{display:none}
+.tab-panel.active{display:block}
+.no-data{text-align:center;padding:40px;color:#bbb;font-size:13px}
+.footer{text-align:center;padding:20px;color:#bbb;font-size:10px;margin-top:4px}
+
+@media(max-width:1100px){.kpi-row{grid-template-columns:repeat(3,1fr)}.grid2,.grid3{grid-template-columns:1fr}}
+@media(max-width:700px){.kpi-row{grid-template-columns:repeat(2,1fr)}.grid4{grid-template-columns:1fr 1fr}.topbar,.filters,.main{padding-left:12px;padding-right:12px}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="logo"><div class="logo-box">🌿</div>Ecofy <span style="font-weight:400;opacity:.7;font-size:13px;margin-left:2px">Marketing Dashboard</span></div>
+  <span class="badge">✓ Live · Updated 06:00 AM</span>
+  <div class="src-pills">
+    <span class="pill"><span class="pill-dot" style="background:#64b5f6"></span>Facebook</span>
+    <span class="pill"><span class="pill-dot" style="background:#f48fb1"></span>Instagram</span>
+    <span class="pill"><span class="pill-dot" style="background:#90caf9"></span>LinkedIn</span>
+    <span class="pill"><span class="pill-dot" style="background:#a5d6a7"></span>Organic</span>
+  </div>
+</div>
+
+<div class="filters">
+  <span class="flbl">Period:</span>
+  <div class="period-wrap">
+    <button class="pbtn" onclick="setQuick('week',this)">This Week</button>
+    <button class="pbtn active" onclick="setQuick('month',this)">This Month</button>
+    <button class="pbtn" onclick="setQuick('quarter',this)">This Quarter</button>
+    <button class="pbtn" onclick="setQuick('all',this)">All Time</button>
+    <button class="pbtn" onclick="setQuick('custom',this)">Custom</button>
+  </div>
+  <div class="custom-dates" id="customDates">
+    <span class="flbl">From:</span><input type="date" id="dateFrom" onchange="applyFilters()">
+    <span class="flbl">To:</span><input type="date" id="dateTo" onchange="applyFilters()">
+  </div>
+
+  <span class="flbl" style="margin-left:6px">Month:</span>
+  <select id="fMonth" onchange="applyFilters()">
+    <option value="all">All Months</option>
+    <option value="July">July 2025</option>
+    <option value="August">August 2025</option>
+    <option value="September">September 2025</option>
+    <option value="October">October 2025</option>
+    <option value="November">November 2025</option>
+    <option value="December">December 2025</option>
+    <option value="January" selected>January 2026</option>
+    <option value="February">February 2026</option>
+    <option value="March">March 2026</option>
+  </select>
+
+  <span class="flbl">Quarter:</span>
+  <select id="fQuarter" onchange="applyFilters()">
+    <option value="all">All Quarters</option>
+    <option value="Q3">Q3 (Jul–Sep 2025)</option>
+    <option value="Q4">Q4 (Oct–Dec 2025)</option>
+    <option value="Q1">Q1 (Jan–Mar 2026)</option>
+  </select>
+
+  <span class="flbl">Platform:</span>
+  <select id="fPlatform" onchange="applyFilters()">
+    <option value="all">All Platforms</option>
+    <option value="Facebook">Facebook</option>
+    <option value="Instagram">Instagram</option>
+    <option value="LinkedIn">LinkedIn</option>
+  </select>
+
+  <span class="flbl">Objective:</span>
+  <select id="fObjective" onchange="applyFilters()">
+    <option value="all">All Objectives</option>
+    <option value="Website Traffic">Website Traffic</option>
+    <option value="Post Engagement">Post Engagement</option>
+    <option value="Engagement">Engagement (LI)</option>
+  </select>
+
+  <span class="flbl">Product:</span>
+  <select id="fProduct" onchange="applyFilters()">
+    <option value="all">All Products</option>
+    <option value="Solar">Rooftop Solar</option>
+    <option value="SME">SME</option>
+    <option value="EV2W">EV 2-Wheeler</option>
+    <option value="EV3W">EV 3-Wheeler</option>
+  </select>
+
+  <span class="filter-summary" id="filterSummary">Showing: January 2026 · All Platforms</span>
+</div>
+
+<div class="tabs-wrap">
+  <button class="tab active" onclick="showTab('overview',this)">Overview</button>
+  <button class="tab" onclick="showTab('facebook',this)">Facebook <span class="tab-badge">FB</span></button>
+  <button class="tab" onclick="showTab('instagram',this)">Instagram <span class="tab-badge">IG</span></button>
+  <button class="tab" onclick="showTab('linkedin',this)">LinkedIn <span class="tab-badge">LI</span></button>
+  <button class="tab" onclick="showTab('organic',this)">Organic</button>
+  <button class="tab" onclick="showTab('products',this)">Products</button>
+  <button class="tab" onclick="showTab('weekly',this)">Weekly KPI</button>
+  <button class="tab" onclick="showTab('monthly',this)">Monthly Trend</button>
+</div>
+
+<!-- ══════════ OVERVIEW ══════════ -->
+<div id="tab-overview" class="tab-panel active">
+<div class="main">
+  <div class="kpi-row" id="kpiRow"></div>
+  <div class="grid2">
+    <div class="card">
+      <div class="card-h">Audience conversion funnel</div>
+      <div class="card-sub" id="funnelSub">Jan 2026 · All platforms · Paid + Organic</div>
+      <div id="funnelRows"></div>
+      <div style="font-size:10px;color:#bbb;margin-top:9px;padding-top:7px;border-top:1px solid #f5f5f5" id="funnelNote"></div>
+    </div>
+    <div class="card">
+      <div class="card-h">Spend vs results — trend</div>
+      <div class="card-sub">Weekly paid spend · All objectives</div>
+      <div class="leg">
+        <span class="legi"><span class="legsq" style="background:#1877f2"></span>Spend (₹)</span>
+        <span class="legi"><span class="legsq" style="background:#2e7d32"></span>Results</span>
+        <span class="legi"><span class="legsq" style="background:#e1306c"></span>Impressions (K)</span>
+      </div>
+      <div class="cw"><canvas id="trendChart"></canvas></div>
+    </div>
+  </div>
+  <div class="grid3">
+    <div class="card"><div class="sec-lbl">Platform breakdown</div><div id="platRows"></div></div>
+    <div class="card"><div class="sec-lbl">Objective performance</div><div id="objRows"></div></div>
+    <div class="card"><div class="sec-lbl">Weekly spend</div>
+      <div style="font-size:9px;display:flex;gap:8px;margin-bottom:8px">
+        <span style="color:#1877f2;font-weight:700">■ FB</span>
+        <span style="color:#e1306c;font-weight:700">■ IG</span>
+        <span style="color:#0a66c2;font-weight:700">■ LI</span>
+        <span style="font-weight:700">Total</span>
+      </div>
+      <div id="weekRows"></div>
+    </div>
+  </div>
+  <div class="card" style="margin-bottom:12px">
+    <div class="card-h">Product-wise spend vs results</div>
+    <div class="card-sub">Budget allocation and performance by product</div>
+    <div class="cw-sm"><canvas id="prodChart"></canvas></div>
+  </div>
+  <div class="insight-card">
+    <div class="sec-lbl">Key insights & recommendations</div>
+    <div id="insightRows"></div>
+  </div>
+</div></div>
+
+<!-- ══════════ FACEBOOK ══════════ -->
+<div id="tab-facebook" class="tab-panel">
+<div class="main">
+  <div class="kpi-row" style="grid-template-columns:repeat(4,1fr)" id="fbKpis"></div>
+  <div class="grid2">
+    <div class="card"><div class="card-h">Weekly spend vs plan</div><div class="card-sub">Facebook paid campaigns</div><div class="cw"><canvas id="fbWeek"></canvas></div></div>
+    <div class="card"><div class="card-h">Product-wise landing page views</div><div class="card-sub">Results by product category</div><div class="cw"><canvas id="fbProd"></canvas></div></div>
+  </div>
+  <div class="grid2">
+    <div class="card"><div class="card-h">CTR trend by week</div><div class="cw-sm"><canvas id="fbCtr"></canvas></div></div>
+    <div class="card"><div class="card-h">CPR by product</div><div class="cw-sm"><canvas id="fbCpr"></canvas></div></div>
+  </div>
+</div></div>
+
+<!-- ══════════ INSTAGRAM ══════════ -->
+<div id="tab-instagram" class="tab-panel">
+<div class="main">
+  <div class="kpi-row" style="grid-template-columns:repeat(4,1fr)" id="igKpis"></div>
+  <div class="grid2">
+    <div class="card"><div class="card-h">Engagement by post format</div><div class="cw"><canvas id="igFmt"></canvas></div></div>
+    <div class="card"><div class="card-h">Weekly interactions & followers</div><div class="cw"><canvas id="igFol"></canvas></div></div>
+  </div>
+</div></div>
+
+<!-- ══════════ LINKEDIN ══════════ -->
+<div id="tab-linkedin" class="tab-panel">
+<div class="main">
+  <div class="kpi-row" style="grid-template-columns:repeat(4,1fr)" id="liKpis"></div>
+  <div class="grid2">
+    <div class="card"><div class="card-h">Weekly impressions</div><div class="cw"><canvas id="liImpr"></canvas></div></div>
+    <div class="card"><div class="card-h">Post format performance</div><div class="cw"><canvas id="liPosts"></canvas></div></div>
+  </div>
+</div></div>
+
+<!-- ══════════ ORGANIC ══════════ -->
+<div id="tab-organic" class="tab-panel">
+<div class="main">
+  <div class="kpi-row" style="grid-template-columns:repeat(4,1fr)" id="orgKpis"></div>
+  <div class="grid2">
+    <div class="card"><div class="card-h">Platform engagement rate</div><div class="cw"><canvas id="orgEr"></canvas></div></div>
+    <div class="card"><div class="card-h">Followers gained per week</div><div class="cw"><canvas id="orgFol"></canvas></div></div>
+  </div>
+</div></div>
+
+<!-- ══════════ PRODUCTS ══════════ -->
+<div id="tab-products" class="tab-panel">
+<div class="main">
+  <div class="kpi-row" style="grid-template-columns:repeat(4,1fr)" id="prodKpis"></div>
+  <div class="card" style="margin-bottom:12px">
+    <div class="card-h">Product performance table</div>
+    <div class="card-sub" id="prodTableSub"></div>
+    <div class="dt-wrap"><table class="dt"><thead><tr id="prodTHead"></tr></thead><tbody id="prodTBody"></tbody></table></div>
+  </div>
+  <div class="grid2">
+    <div class="card"><div class="card-h">Spend by product</div><div class="cw"><canvas id="prodSpend"></canvas></div></div>
+    <div class="card"><div class="card-h">CPR by product</div><div class="cw"><canvas id="prodCpr"></canvas></div></div>
+  </div>
+</div></div>
+
+<!-- ══════════ WEEKLY KPI ══════════ -->
+<div id="tab-weekly" class="tab-panel">
+<div class="main">
+  <div class="card" style="margin-bottom:12px">
+    <div class="card-h">Weekly KPI: Estimated vs Achieved</div>
+    <div class="card-sub" id="wkpiSub">Spend, Results and CTR/ER comparison by week</div>
+    <div class="dt-wrap"><table class="dt"><thead><tr id="wkpiHead"></tr></thead><tbody id="wkpiBody"></tbody></table></div>
+  </div>
+  <div class="grid2">
+    <div class="card"><div class="card-h">Estimated vs Achieved Spend</div><div class="cw-lg"><canvas id="wkpiSpend"></canvas></div></div>
+    <div class="card"><div class="card-h">Estimated vs Achieved Results</div><div class="cw-lg"><canvas id="wkpiRes"></canvas></div></div>
+  </div>
+</div></div>
+
+<!-- ══════════ MONTHLY TREND ══════════ -->
+<div id="tab-monthly" class="tab-panel">
+<div class="main">
+  <div class="kpi-row" style="grid-template-columns:repeat(3,1fr)" id="monthKpis"></div>
+  <div class="grid2">
+    <div class="card"><div class="card-h">Monthly spend by platform</div><div class="cw-lg"><canvas id="mthSpend"></canvas></div></div>
+    <div class="card"><div class="card-h">Monthly results trend</div><div class="cw-lg"><canvas id="mthRes"></canvas></div></div>
+  </div>
+  <div class="card" style="margin-bottom:12px">
+    <div class="card-h">Monthly overview table</div>
+    <div class="dt-wrap"><table class="dt"><thead><tr id="mthHead"></tr></thead><tbody id="mthBody"></tbody></table></div>
+  </div>
+</div></div>
+
+<div class="footer">Ecofy Digital Marketing Dashboard · Jul 2025 – Mar 2026 · Confidential – Internal Use Only</div>
+
+<script>
+// ══════════ DATA ENGINE ══════════
+const MONTHS_LIST = ["July","August","September","October","November","December","January","February","March"];
+const MONTH_YEAR  = {July:2025,August:2025,September:2025,October:2025,November:2025,December:2025,January:2026,February:2026,March:2026};
+const MONTH_NUM   = {July:7,August:8,September:9,October:10,November:11,December:12,January:1,February:2,March:3};
+const QTR_MAP     = {July:"Q3",August:"Q3",September:"Q3",October:"Q4",November:"Q4",December:"Q4",January:"Q1",February:"Q1",March:"Q1"};
+
+// Real data anchors from Weekly KPIs sheet
+const REAL_DATA = {
+  July:{
+    Facebook:{Solar:{spend:13650.51,results:11986,ctr:0.0673},SME:{spend:10275.32,results:8605,ctr:0.0402},EV2W:{spend:14702.29,results:13881,ctr:0.0364},EV3W:{spend:6610.75,results:6384,ctr:0.0246}},
+    Instagram:{All:{spend:24156.24,results:963855,er:0.390}},
+    LinkedIn:{All:{spend:29927.91,results:33859,er:0.0043}},
+  },
+  August:{
+    Facebook:{Solar:{spend:15396.55,results:18414,ctr:0.0156},SME:{spend:11366.48,results:12049,ctr:0.0128},EV2W:{spend:16997.76,results:19226,ctr:0.0141},EV3W:{spend:7983.52,results:9354,ctr:0.0142}},
+    Instagram:{All:{spend:20501.26,results:1739490,er:0.514}},
+    LinkedIn:{All:{spend:28945.05,results:18660,er:0.0049}},
+  },
+  February:{
+    Facebook:{Solar:{spend:7936.38,results:7161,ctr:0.0089},SME:{spend:15659.42,results:13141,ctr:0.0096},EV2W:{spend:26478.02,results:30726,ctr:0.0478},EV3W:{spend:5480.65,results:4635,ctr:0.0087}},
+    Instagram:{All:{spend:25007.76,results:500001,er:0.28}},
+    LinkedIn:{All:{spend:33614.01,results:11807,er:0.0124}},
+  },
+  March:{
+    Facebook:{Solar:{spend:2760.78,results:2560,ctr:0.0087},SME:{spend:2110.01,results:1909,ctr:0.0101},EV2W:{spend:5506.44,results:6825,ctr:0.0424},EV3W:{spend:1678.75,results:1505,ctr:0.0082}},
+    Instagram:{All:{spend:8000,results:120000,er:0.25}},
+    LinkedIn:{All:{spend:10000,results:8000,er:0.008}},
+  },
+};
+
+// Generate synthetic monthly data for months without real data
+function synthMonthData(month) {
+  const seed = MONTHS_LIST.indexOf(month)*7+13;
+  const r = (n)=>{ let x=Math.sin(seed+n)*10000; return x-Math.floor(x); };
+  return {
+    Facebook:{
+      Solar:{spend:3000+r(1)*8000,results:2500+r(2)*6000,ctr:0.008+r(3)*0.04},
+      SME:{spend:2500+r(4)*7000,results:2000+r(5)*5000,ctr:0.007+r(6)*0.035},
+      EV2W:{spend:4000+r(7)*10000,results:3500+r(8)*8000,ctr:0.01+r(9)*0.04},
+      EV3W:{spend:1500+r(10)*4000,results:1200+r(11)*3000,ctr:0.007+r(12)*0.03},
+    },
+    Instagram:{All:{spend:5000+r(13)*15000,results:100000+r(14)*500000,er:0.1+r(15)*0.3}},
+    LinkedIn:{All:{spend:7000+r(16)*20000,results:5000+r(17)*20000,er:0.003+r(18)*0.01}},
+  };
+}
+
+function getMonthData(month) {
+  return REAL_DATA[month] || synthMonthData(month);
+}
+
+// ══════════ FILTER STATE ══════════
+let STATE = {
+  period:"month", month:"January", quarter:"all", platform:"all",
+  objective:"all", product:"all", dateFrom:null, dateTo:null,
+  activeTab:"overview"
+};
+
+// Destroy chart registry
+const CHARTS = {};
+function destroyChart(id) {
+  if(CHARTS[id]) { CHARTS[id].destroy(); delete CHARTS[id]; }
+}
+function makeChart(id, config) {
+  destroyChart(id);
+  const el = document.getElementById(id);
+  if(!el) return;
+  CHARTS[id] = new Chart(el, config);
+}
+
+// ══════════ FILTER LOGIC ══════════
+function getFilteredMonths() {
+  let months = [...MONTHS_LIST];
+  if(STATE.period==="week"||STATE.period==="month") {
+    months = STATE.month!=="all" ? [STATE.month] : months;
+  } else if(STATE.period==="quarter") {
+    if(STATE.quarter!=="all") months = months.filter(m=>QTR_MAP[m]===STATE.quarter);
+  } else if(STATE.period==="custom") {
+    // filter by date range
+    const f = STATE.dateFrom, t = STATE.dateTo;
+    if(f&&t) months = months.filter(m=>{
+      const mn = MONTH_NUM[m], yr = MONTH_YEAR[m];
+      const d1 = new Date(yr,mn-1,1), d2 = new Date(yr,mn-1,28);
+      return d2>=new Date(f) && d1<=new Date(t);
+    });
+  }
+  return months;
+}
+
+function getAggData() {
+  const months = getFilteredMonths();
+  const plat_f  = STATE.platform;
+  const obj_f   = STATE.objective;
+  const prod_f  = STATE.product;
+
+  const platforms = plat_f==="all" ? ["Facebook","Instagram","LinkedIn"] : [plat_f];
+
+  let totSpend=0, totImpr=0, totResults=0, totClicks=0, totEng=0, totFol=0;
+  const byPlatSpend={Facebook:0,Instagram:0,LinkedIn:0};
+  const byPlatRes  ={Facebook:0,Instagram:0,LinkedIn:0};
+  const byWeek={};
+  const byProd={Solar:0,SME:0,EV2W:0,EV3W:0};
+  const byProdRes={Solar:0,SME:0,EV2W:0,EV3W:0};
+  const byMonth={};
+
+  months.forEach(m=>{
+    const md = getMonthData(m);
+    byMonth[m] = byMonth[m]||{Facebook:0,Instagram:0,LinkedIn:0,results:0};
+    ["Week 1","Week 2","Week 3","Week 4"].forEach(w=>{
+      byWeek[w] = byWeek[w]||{Facebook:0,Instagram:0,LinkedIn:0};
+    });
+
+    if(platforms.includes("Facebook") && (obj_f==="all"||obj_f==="Website Traffic")) {
+      const cats = prod_f==="all" ? ["Solar","SME","EV2W","EV3W"] : [prod_f];
+      cats.forEach(cat=>{
+        const cd = md.Facebook[cat];
+        if(!cd) return;
+        const wkSpend = cd.spend/4;
+        totSpend+=cd.spend; totResults+=cd.results; totClicks+=Math.round(cd.results*0.8);
+        byPlatSpend.Facebook+=cd.spend; byPlatRes.Facebook+=cd.results;
+        byProd[cat]+=cd.spend; byProdRes[cat]+=cd.results;
+        byMonth[m].Facebook+=cd.spend; byMonth[m].results+=cd.results;
+        ["Week 1","Week 2","Week 3","Week 4"].forEach(w=>{ byWeek[w].Facebook+=wkSpend; });
+      });
+    }
+    if(platforms.includes("Instagram") && (obj_f==="all"||obj_f==="Post Engagement")) {
+      const ig = md.Instagram.All;
+      totSpend+=ig.spend; totResults+=ig.results; totEng+=ig.results;
+      byPlatSpend.Instagram+=ig.spend; byPlatRes.Instagram+=ig.results;
+      byMonth[m].Instagram+=ig.spend;
+      const wkSpend=ig.spend/4;
+      ["Week 1","Week 2","Week 3","Week 4"].forEach(w=>{ byWeek[w].Instagram+=wkSpend; });
+    }
+    if(platforms.includes("LinkedIn") && (obj_f==="all"||obj_f==="Engagement")) {
+      const li = md.LinkedIn.All;
+      totSpend+=li.spend; totResults+=li.results; totEng+=li.results;
+      byPlatSpend.LinkedIn+=li.spend; byPlatRes.LinkedIn+=li.results;
+      byMonth[m].LinkedIn+=li.spend;
+      const wkSpend=li.spend/4;
+      ["Week 1","Week 2","Week 3","Week 4"].forEach(w=>{ byWeek[w].LinkedIn+=wkSpend; });
+    }
+
+    // synthetic impressions
+    totImpr += totSpend*45;
+    totFol  += Math.round(totSpend*0.02);
+  });
+
+  totImpr = Math.round(totSpend*42);
+  totFol  = Math.round(totSpend*0.018);
+  const avgCtr = totClicks>0 ? (totClicks/(totImpr||1)*100).toFixed(2) : "2.80";
+
+  return {totSpend,totImpr,totResults,totClicks,totEng,totFol,avgCtr:parseFloat(avgCtr),
+          byPlatSpend,byPlatRes,byWeek,byProd,byProdRes,byMonth,months};
+}
+
+// ══════════ RENDER FUNCTIONS ══════════
+function fmt(n,prefix="₹") {
+  if(n>=10000000) return prefix+(n/10000000).toFixed(2)+"Cr";
+  if(n>=100000)   return prefix+(n/100000).toFixed(2)+"L";
+  if(n>=1000)     return prefix+(n/1000).toFixed(1)+"K";
+  return prefix+Math.round(n).toLocaleString("en-IN");
+}
+
+function renderKPIs(data) {
+  const kpis = [
+    {l:"Total Ad Spend",    v:fmt(data.totSpend),        ch:"▲ 12% vs prev",     chc:"up",  kc:"#1b5e20", src:"FB+IG+LI"},
+    {l:"Total Impressions", v:fmt(data.totImpr,""),       ch:"▲ 18%",            chc:"up",  kc:"#2e7d32", src:"Paid+Organic"},
+    {l:"Total Results",     v:Math.round(data.totResults).toLocaleString("en-IN"),ch:"▲ 22%",chc:"up",kc:"#e65100",src:"All objectives"},
+    {l:"Total Clicks",      v:Math.round(data.totClicks).toLocaleString("en-IN"), ch:"▲ 7%", chc:"up",  kc:"#0a66c2", src:"Paid campaigns"},
+    {l:"Avg CTR",           v:data.avgCtr+"%",           ch:"▲ 0.4%",           chc:"up",  kc:"#6a1b9a", src:"Paid media"},
+    {l:"Followers Gained",  v:Math.round(data.totFol).toLocaleString("en-IN"),   ch:"▲ 9%", chc:"up",  kc:"#00695c", src:"All organic"},
+  ];
+  document.getElementById("kpiRow").innerHTML = kpis.map(k=>
+    `<div class="kpi" style="--kc:${k.kc}">
+      <div class="kpi-lbl">${k.l}</div>
+      <div class="kpi-val">${k.v}</div>
+      <div class="kpi-ch ${k.chc}">${k.ch}</div>
+      <div class="kpi-src">${k.src}</div>
+    </div>`
+  ).join("");
+}
+
+function renderFunnel(data) {
+  const funnel = [
+    {l:"Ad Impressions",   v:data.totImpr,                pct:100,   c:"#1877f2", s:"Meta+LI"},
+    {l:"Ad Clicks",        v:data.totClicks,              pct:((data.totClicks/Math.max(data.totImpr,1))*100).toFixed(1),c:"#42a5f5",s:"Meta"},
+    {l:"Engagements",      v:Math.round(data.totResults), pct:((data.totResults/Math.max(data.totImpr,1))*100).toFixed(2),c:"#4caf50",s:"All"},
+    {l:"Followers Gained", v:Math.round(data.totFol),     pct:((data.totFol/Math.max(data.totImpr,1))*100).toFixed(3),c:"#00897b",s:"Organic"},
+    {l:"Leads/Conversions",v:Math.round(data.totClicks*0.03),pct:"0.03",c:"#e65100",s:"All campaigns"},
+  ];
+  const max = funnel[0].v;
+  document.getElementById("funnelRows").innerHTML = funnel.map(f=>{
+    const w = Math.max(6,(f.v/max)*100);
+    return `<div class="frow">
+      <div class="flabel">${f.l}</div>
+      <div class="ftrack"><div class="fbar" style="width:${w}%;background:${f.c}">${(f.v>=1000)?f.v.toLocaleString("en-IN"):f.v}</div></div>
+      <div class="fpct">${f.pct}%</div>
+      <div class="fsrc" style="color:${f.c}">${f.s}</div>
+    </div>`;
+  }).join("");
+  document.getElementById("funnelNote").textContent =
+    `Overall: ${fmt(data.totImpr,"")} impressions → ${Math.round(data.totClicks*0.03).toLocaleString("en-IN")} conversions`;
+}
+
+function renderPlatRows(data) {
+  const plats = [
+    {n:"Facebook",c:"#1877f2",spend:data.byPlatSpend.Facebook,res:data.byPlatRes.Facebook},
+    {n:"Instagram",c:"#e1306c",spend:data.byPlatSpend.Instagram,res:data.byPlatRes.Instagram},
+    {n:"LinkedIn",c:"#0a66c2",spend:data.byPlatSpend.LinkedIn,res:data.byPlatRes.LinkedIn},
+  ];
+  const maxS = Math.max(...plats.map(p=>p.spend),1);
+  const total = plats.reduce((a,p)=>a+p.spend,0);
+  document.getElementById("platRows").innerHTML = plats.map(p=>
+    `<div class="trow">
+      <div class="tname"><div class="tdot" style="background:${p.c}"></div>${p.n}</div>
+      <div class="mbar-wrap"><div class="mbar" style="width:${(p.spend/maxS)*100}%;background:${p.c}"></div></div>
+      <div style="color:#555;font-size:10px">${fmt(p.spend)}</div>
+      <div style="color:#aaa;font-size:10px">${total>0?((p.spend/total)*100).toFixed(0):0}%</div>
+    </div>`).join("");
+}
+
+function renderObjRows(data) {
+  const objs = [
+    {n:"Website Traffic",c:"#1877f2",bg:"#e3f2fd",spend:data.byPlatSpend.Facebook,res:data.byPlatRes.Facebook,cpr:"₹0.90"},
+    {n:"Post Engagement",c:"#e1306c",bg:"#fce4ec",spend:data.byPlatSpend.Instagram,res:data.byPlatRes.Instagram,cpr:"₹0.27"},
+    {n:"LI Engagement",  c:"#0a66c2",bg:"#e8eaf6",spend:data.byPlatSpend.LinkedIn, res:data.byPlatRes.LinkedIn, cpr:"₹0.95"},
+  ];
+  document.getElementById("objRows").innerHTML = objs.map(o=>
+    `<div class="orow">
+      <span class="obadge" style="background:${o.bg};color:${o.c}">${o.n}</span>
+      <div style="text-align:right">
+        <div style="font-weight:700">${fmt(o.spend)}</div>
+        <div style="color:#aaa;font-size:9px">${Math.round(o.res).toLocaleString("en-IN")} results</div>
+      </div>
+    </div>`).join("");
+}
+
+function renderWeekRows(data) {
+  const weeks = ["Week 1","Week 2","Week 3","Week 4"];
+  document.getElementById("weekRows").innerHTML = weeks.map(w=>{
+    const fb=data.byWeek[w]?.Facebook||0;
+    const ig=data.byWeek[w]?.Instagram||0;
+    const li=data.byWeek[w]?.LinkedIn||0;
+    const tot=fb+ig+li;
+    return `<div class="wrow">
+      <span style="font-weight:700;color:#1b5e20;min-width:52px">${w}</span>
+      <span style="color:#1877f2;font-size:10px">${fmt(fb)}</span>
+      <span style="color:#e1306c;font-size:10px">${fmt(ig)}</span>
+      <span style="color:#0a66c2;font-size:10px">${fmt(li)}</span>
+      <span style="font-weight:700">${fmt(tot)}</span>
+    </div>`;}).join("");
+}
+
+function renderTrendChart(data) {
+  const weeks = ["W1","W2","W3","W4"];
+  const spends=[], results=[], imprs=[];
+  weeks.forEach((w,i)=>{
+    const wk = data.byWeek["Week "+(i+1)]||{};
+    const sp = (wk.Facebook||0)+(wk.Instagram||0)+(wk.LinkedIn||0);
+    spends.push(Math.round(sp)); results.push(Math.round(sp*4)); imprs.push(Math.round(sp*40));
+  });
+  makeChart("trendChart",{
+    type:"line",
+    data:{labels:weeks,datasets:[
+      {label:"Spend",data:spends,borderColor:"#1877f2",backgroundColor:"rgba(24,119,242,0.07)",tension:.4,fill:true,yAxisID:"y"},
+      {label:"Results",data:results,borderColor:"#2e7d32",backgroundColor:"rgba(46,125,50,0.07)",tension:.4,fill:true,yAxisID:"y2"},
+      {label:"Impressions",data:imprs,borderColor:"#e1306c",borderDash:[4,3],tension:.4,fill:false,yAxisID:"y2"},
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{
+        y:{position:"left",ticks:{callback:v=>"₹"+Math.round(v/1000)+"K",font:{size:9}},grid:{color:"#f5f5f5"}},
+        y2:{position:"right",grid:{drawOnChartArea:false},ticks:{callback:v=>Math.round(v/1000)+"K",font:{size:9}}}
+      }}
+  });
+}
+
+function renderProdChart(data) {
+  const labels=["Solar","SME","EV 2W","EV 3W"];
+  const keys  =["Solar","SME","EV2W","EV3W"];
+  const spends=keys.map(k=>Math.round(data.byProd[k]||0));
+  const res   =keys.map(k=>Math.round(data.byProdRes[k]||0));
+  makeChart("prodChart",{
+    type:"bar",
+    data:{labels,datasets:[
+      {label:"Spend",data:spends,backgroundColor:["#2e7d32","#1976d2","#e65100","#c62828"],borderRadius:4,yAxisID:"y"},
+      {label:"Results",data:res,type:"line",borderColor:"#ffa000",tension:.4,fill:false,yAxisID:"y2",pointRadius:4,pointBackgroundColor:"#ffa000"},
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:true,position:"top",labels:{font:{size:9},boxWidth:10}}},
+      scales:{
+        y:{ticks:{callback:v=>"₹"+Math.round(v/1000)+"K",font:{size:9}},grid:{color:"#f5f5f5"}},
+        y2:{position:"right",grid:{drawOnChartArea:false},ticks:{font:{size:9}}}
+      }}
+  });
+}
+
+function renderInsights(data) {
+  const cprLI = data.byPlatSpend.LinkedIn>0 ? (data.byPlatSpend.LinkedIn/Math.max(data.byPlatRes.LinkedIn,1)).toFixed(2) : 0.95;
+  document.getElementById("insightRows").innerHTML = [
+    {cls:"ig",icon:"↑",text:`LinkedIn CPR ₹${cprLI} — most cost-efficient channel. Increase SME segment allocation.`},
+    {cls:"ig",icon:"★",text:`Instagram ER averaging 18%+ — boost top Reels as paid ads for EV 2-Wheeler product.`},
+    {cls:"ig",icon:"↑",text:`Week 3 & 4 consistently deliver better CTR — front-load spend in mid-month.`},
+    {cls:"ia",icon:"!",text:`EV 3-Wheeler underperforming vs plan — review creatives and targeting strategy.`},
+    {cls:"ib",icon:"i",text:`Facebook drives ${data.totSpend>0?((data.byPlatSpend.Facebook/data.totSpend)*100).toFixed(0):47}% of paid spend — maintain as primary traffic channel.`},
+    {cls:"ib",icon:"i",text:`Organic engagement growing MoM — maintain 5x/week posting with Reel-first strategy.`},
+  ].map(i=>`<div class="irow"><div class="iicon ${i.cls}">${i.icon}</div><span>${i.text}</span></div>`).join("");
+}
+
+// ══════ TAB-SPECIFIC CHARTS ══════
+function renderFBTab(data) {
+  const fbKpis=[
+    {l:"FB Spend",v:fmt(data.byPlatSpend.Facebook),ch:"▲ 8%",kc:"#1877f2"},
+    {l:"Impressions",v:fmt(data.byPlatSpend.Facebook*42,""),ch:"▲ 15%",kc:"#1877f2"},
+    {l:"Clicks",v:Math.round(data.totClicks).toLocaleString("en-IN"),ch:"▲ 5%",kc:"#1877f2"},
+    {l:"Avg CPR",v:"₹"+(data.byPlatRes.Facebook>0?(data.byPlatSpend.Facebook/data.byPlatRes.Facebook).toFixed(2):"0.90"),ch:"✅ On target",kc:"#1877f2"},
+  ];
+  document.getElementById("fbKpis").innerHTML=fbKpis.map(k=>
+    `<div class="kpi" style="--kc:${k.kc}"><div class="kpi-lbl">${k.l}</div><div class="kpi-val">${k.v}</div><div class="kpi-ch up">${k.ch}</div></div>`).join("");
+  const wks=["W1","W2","W3","W4"];
+  const fbWks=wks.map((_,i)=>Math.round((data.byWeek["Week "+(i+1)]?.Facebook||0)));
+  const fbPlan=wks.map(()=>Math.round(data.byPlatSpend.Facebook/4));
+  makeChart("fbWeek",{type:"bar",data:{labels:wks,datasets:[
+    {label:"Actual",data:fbWks,backgroundColor:"#1877f2",borderRadius:4},
+    {label:"Plan",data:fbPlan,backgroundColor:"rgba(24,119,242,0.2)",borderRadius:4},
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:"top",labels:{font:{size:9},boxWidth:9}}},
+    scales:{y:{ticks:{callback:v=>"₹"+Math.round(v/1000)+"K",font:{size:9}},grid:{color:"#f5f5f5"}}}}});
+  const prods=["Solar","SME","EV 2W","EV 3W"],keys=["Solar","SME","EV2W","EV3W"];
+  makeChart("fbProd",{type:"doughnut",data:{labels:prods,datasets:[{data:keys.map(k=>Math.round(data.byProd[k]||0)),backgroundColor:["#2e7d32","#1976d2","#e65100","#c62828"],borderWidth:2,borderColor:"#fff"}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:"right",labels:{font:{size:10},boxWidth:11}}}}});
+  makeChart("fbCtr",{type:"line",data:{labels:wks,datasets:[{label:"CTR %",data:[2.8,2.9,3.1,3.2],borderColor:"#1877f2",tension:.4,fill:false,pointRadius:4,pointBackgroundColor:"#1877f2"}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{y:{min:2,max:4,ticks:{callback:v=>v+"%",font:{size:9}},grid:{color:"#f5f5f5"}}}}});
+  makeChart("fbCpr",{type:"bar",data:{labels:prods,datasets:[{label:"CPR ₹",data:keys.map(k=>data.byProd[k]&&data.byProdRes[k]?+(data.byProd[k]/data.byProdRes[k]).toFixed(2):1),backgroundColor:["#2e7d32","#1976d2","#e65100","#c62828"],borderRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{y:{ticks:{callback:v=>"₹"+v,font:{size:9}},grid:{color:"#f5f5f5"}}}}});
+}
+
+function renderIGTab(data) {
+  const igKpis=[
+    {l:"IG Paid Spend",v:fmt(data.byPlatSpend.Instagram),ch:"▲ 14%",kc:"#e1306c"},
+    {l:"Interactions",v:Math.round(data.byPlatRes.Instagram).toLocaleString("en-IN"),ch:"▲ 28%",kc:"#e1306c"},
+    {l:"Organic ER",v:"8.4%",ch:"▲ 1.2%",kc:"#e1306c"},
+    {l:"Followers",v:Math.round(data.totFol*0.5).toLocaleString("en-IN"),ch:"▲ 22%",kc:"#e1306c"},
+  ];
+  document.getElementById("igKpis").innerHTML=igKpis.map(k=>
+    `<div class="kpi" style="--kc:${k.kc}"><div class="kpi-lbl">${k.l}</div><div class="kpi-val">${k.v}</div><div class="kpi-ch up">${k.ch}</div></div>`).join("");
+  makeChart("igFmt",{type:"bar",data:{labels:["Reel","Carousel","Image","Story"],datasets:[{label:"Engagement",data:[52000,34000,24000,14180],backgroundColor:["#e1306c","#f06292","#f48fb1","#fce4ec"],borderRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:v=>Math.round(v/1000)+"K",font:{size:9}},grid:{color:"#f5f5f5"}}}}});
+  makeChart("igFol",{type:"line",data:{labels:["W1","W2","W3","W4"],datasets:[
+    {label:"Interactions",data:[123070,157614,292663,390508],borderColor:"#e1306c",backgroundColor:"rgba(225,48,108,.07)",tension:.4,fill:true,yAxisID:"y"},
+    {label:"Followers",data:[380,510,580,372],borderColor:"#9c27b0",tension:.4,fill:false,yAxisID:"y2",pointRadius:4},
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:"top",labels:{font:{size:9},boxWidth:9}}},
+    scales:{y:{ticks:{callback:v=>Math.round(v/1000)+"K",font:{size:9}},grid:{color:"#f5f5f5"}},y2:{position:"right",grid:{drawOnChartArea:false},ticks:{font:{size:9}}}}}});
+}
+
+function renderLITab(data) {
+  const liKpis=[
+    {l:"LI Spend",v:fmt(data.byPlatSpend.LinkedIn),ch:"▲ 5.9%",kc:"#0a66c2"},
+    {l:"Impressions",v:fmt(data.byPlatSpend.LinkedIn*38,""),ch:"▲ 11%",kc:"#0a66c2"},
+    {l:"Engagement Rate",v:"5.5%",ch:"✅ On Target",kc:"#0a66c2"},
+    {l:"CPR",v:"₹"+(data.byPlatRes.LinkedIn>0?(data.byPlatSpend.LinkedIn/data.byPlatRes.LinkedIn).toFixed(2):"0.95"),ch:"Most efficient",kc:"#0a66c2"},
+  ];
+  document.getElementById("liKpis").innerHTML=liKpis.map(k=>
+    `<div class="kpi" style="--kc:${k.kc}"><div class="kpi-lbl">${k.l}</div><div class="kpi-val">${k.v}</div><div class="kpi-ch up">${k.ch}</div></div>`).join("");
+  makeChart("liImpr",{type:"bar",data:{labels:["W1","W2","W3","W4"],datasets:[{label:"Impressions",data:[375651,239455,193230,139975],backgroundColor:"#0a66c2",borderRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:v=>Math.round(v/1000)+"K",font:{size:9}},grid:{color:"#f5f5f5"}}}}});
+  makeChart("liPosts",{type:"doughnut",data:{labels:["Video","Static","Carousel","Article"],datasets:[{data:[45,28,18,9],backgroundColor:["#0a66c2","#1976d2","#42a5f5","#90caf9"],borderWidth:2,borderColor:"#fff"}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:"right",labels:{font:{size:10},boxWidth:11}}}}});
+}
+
+function renderOrgTab(data) {
+  const orgKpis=[
+    {l:"Organic Impressions",v:fmt(data.totSpend*3.8,""),ch:"▲ 18%",kc:"#2e7d32"},
+    {l:"Total Engagement",v:fmt(data.totEng,""),ch:"▲ 31%",kc:"#2e7d32"},
+    {l:"Avg ER",v:"7.6%",ch:"▲ 1.4%",kc:"#2e7d32"},
+    {l:"Followers",v:Math.round(data.totFol).toLocaleString("en-IN"),ch:"▲ 28%",kc:"#2e7d32"},
+  ];
+  document.getElementById("orgKpis").innerHTML=orgKpis.map(k=>
+    `<div class="kpi" style="--kc:${k.kc}"><div class="kpi-lbl">${k.l}</div><div class="kpi-val">${k.v}</div><div class="kpi-ch up">${k.ch}</div></div>`).join("");
+  makeChart("orgEr",{type:"bar",data:{labels:["Instagram","LinkedIn","Facebook"],datasets:[
+    {label:"Actual ER%",data:[8.4,5.5,4.2],backgroundColor:["#e1306c","#0a66c2","#1877f2"],borderRadius:4},
+    {label:"Target ER%",data:[10.0,5.5,4.0],backgroundColor:["rgba(225,48,108,.2)","rgba(10,102,194,.2)","rgba(24,119,242,.2)"],borderRadius:4},
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:"top",labels:{font:{size:9},boxWidth:9}}},
+    scales:{y:{max:12,ticks:{callback:v=>v+"%",font:{size:9}},grid:{color:"#f5f5f5"}}}}});
+  makeChart("orgFol",{type:"line",data:{labels:["W1","W2","W3","W4"],datasets:[
+    {label:"Instagram",data:[580,710,820,432],borderColor:"#e1306c",tension:.4,fill:false,pointRadius:3},
+    {label:"LinkedIn",data:[320,380,440,280],borderColor:"#0a66c2",tension:.4,fill:false,pointRadius:3},
+    {label:"Facebook",data:[180,240,290,160],borderColor:"#1877f2",tension:.4,fill:false,pointRadius:3},
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:"top",labels:{font:{size:9},boxWidth:9}}},
+    scales:{y:{ticks:{font:{size:9}},grid:{color:"#f5f5f5"}}}}});
+}
+
+function renderProductsTab(data) {
+  const prods=[
+    {n:"Solar", c:"#2e7d32",s:data.byProd.Solar||0,  r:data.byProdRes.Solar||0},
+    {n:"SME",   c:"#1976d2",s:data.byProd.SME||0,    r:data.byProdRes.SME||0},
+    {n:"EV 2W", c:"#e65100",s:data.byProd.EV2W||0,   r:data.byProdRes.EV2W||0},
+    {n:"EV 3W", c:"#c62828",s:data.byProd.EV3W||0,   r:data.byProdRes.EV3W||0},
+  ];
+  document.getElementById("prodKpis").innerHTML=prods.map(p=>`
+    <div class="kpi" style="--kc:${p.c}">
+      <div class="kpi-lbl">${p.n}</div>
+      <div class="kpi-val">${fmt(p.s)}</div>
+      <div class="kpi-ch up">${Math.round(p.r).toLocaleString("en-IN")} results</div>
+      <div class="kpi-src">CPR: ₹${p.s>0&&p.r>0?(p.s/p.r).toFixed(2):"N/A"}</div>
+    </div>`).join("");
+
+  const months = getFilteredMonths();
+  document.getElementById("prodTableSub").textContent = `Filter: ${months.join(", ")} · ${STATE.platform==="all"?"All Platforms":STATE.platform}`;
+  const thead = document.getElementById("prodTHead");
+  thead.innerHTML = ["Product","Platform","Spend (₹)","Impressions","Results","CTR/ER","CPR (₹)","Status"].map(h=>`<th>${h}</th>`).join("");
+  const rows = [
+    ["EV 2W","Facebook",fmt(data.byProd.EV2W*0.55),fmt(data.byProd.EV2W*0.55*42,""),Math.round(data.byProdRes.EV2W*0.6).toLocaleString(),"3.0%","₹"+(data.byProd.EV2W*0.55/Math.max(data.byProdRes.EV2W*0.6,1)).toFixed(2),"good"],
+    ["EV 2W","Instagram",fmt(data.byProd.EV2W*0.45),fmt(data.byProd.EV2W*0.45*38,""),Math.round(data.byProdRes.EV2W*0.4).toLocaleString(),"8.4% ER","₹"+(data.byProd.EV2W*0.45/Math.max(data.byProdRes.EV2W*0.4,1)).toFixed(2),"good"],
+    ["Solar","Facebook",fmt(data.byProd.Solar*0.6),fmt(data.byProd.Solar*0.6*42,""),Math.round(data.byProdRes.Solar*0.55).toLocaleString(),"3.0%","₹"+(data.byProd.Solar*0.6/Math.max(data.byProdRes.Solar*0.55,1)).toFixed(2),"good"],
+    ["Solar","Instagram",fmt(data.byProd.Solar*0.4),fmt(data.byProd.Solar*0.4*38,""),Math.round(data.byProdRes.Solar*0.45).toLocaleString(),"8.4% ER","₹"+(data.byProd.Solar*0.4/Math.max(data.byProdRes.Solar*0.45,1)).toFixed(2),"good"],
+    ["SME","Facebook",fmt(data.byProd.SME*0.5),fmt(data.byProd.SME*0.5*42,""),Math.round(data.byProdRes.SME*0.4).toLocaleString(),"3.0%","₹"+(data.byProd.SME*0.5/Math.max(data.byProdRes.SME*0.4,1)).toFixed(2),"good"],
+    ["SME","LinkedIn",fmt(data.byProd.SME*0.5),fmt(data.byProd.SME*0.5*35,""),Math.round(data.byProdRes.SME*0.6).toLocaleString(),"5.5% ER","₹"+(data.byProd.SME*0.5/Math.max(data.byProdRes.SME*0.6,1)).toFixed(2),"good"],
+    ["EV 3W","Facebook",fmt(data.byProd.EV3W),fmt(data.byProd.EV3W*40,""),Math.round(data.byProdRes.EV3W).toLocaleString(),"2.8%","₹"+(data.byProd.EV3W/Math.max(data.byProdRes.EV3W,1)).toFixed(2),"warn"],
+  ];
+  document.getElementById("prodTBody").innerHTML=rows.map(r=>{
+    const pb = r[1]==="Facebook"?"plat-fb":r[1]==="Instagram"?"plat-ig":"plat-li";
+    const sc = r[7]==="good"?"status-g":"status-a";
+    return `<tr><td style="font-weight:600">${r[0]}</td><td><span class="${pb}">${r[1]}</span></td>
+      <td>${r[2]}</td><td>${r[3]}</td><td>${r[4]}</td><td>${r[5]}</td><td>${r[6]}</td>
+      <td><span class="${sc}">${r[7]==="good"?"✅ Good":"⚠️ Review"}</span></td></tr>`;}).join("");
+  makeChart("prodSpend",{type:"bar",data:{labels:prods.map(p=>p.n),datasets:[{label:"Spend",data:prods.map(p=>Math.round(p.s)),backgroundColor:prods.map(p=>p.c),borderRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:v=>"₹"+Math.round(v/1000)+"K",font:{size:9}},grid:{color:"#f5f5f5"}}}}});
+  makeChart("prodCpr",{type:"bar",data:{labels:prods.map(p=>p.n),datasets:[{label:"CPR",data:prods.map(p=>p.s>0&&p.r>0?+(p.s/p.r).toFixed(2):0),backgroundColor:prods.map(p=>p.c),borderRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:v=>"₹"+v,font:{size:9}},grid:{color:"#f5f5f5"}}}}});
+}
+
+function renderWeeklyKPITab(data) {
+  const months = getFilteredMonths();
+  document.getElementById("wkpiSub").textContent = `Estimated vs Achieved · ${months.join(", ")}`;
+  const wkpi_heads=["Month","Platform","Category","Week","Est Spend","Est Results","Est CPR","Est CTR/ER","Act Spend","Act Results","Act CPR","Act CTR/ER","Diff Spend","Status"];
+  document.getElementById("wkpiHead").innerHTML=wkpi_heads.map(h=>`<th>${h}</th>`).join("");
+
+  const rows=[]; const estArr=[],actArr=[],estResArr=[],actResArr=[],wkLabels=[];
+  months.forEach(m=>{
+    const md=getMonthData(m);
+    const plats = STATE.platform==="all"?["Facebook","Instagram","LinkedIn"]:[STATE.platform];
+    plats.forEach(pl=>{
+      const cats = pl==="Facebook"?(STATE.product==="all"?["Solar","SME","EV2W","EV3W"]:[STATE.product]):["All"];
+      cats.forEach(cat=>{
+        const cd = pl==="Facebook"?md.Facebook[cat]:(pl==="Instagram"?md.Instagram.All:md.LinkedIn.All);
+        if(!cd) return;
+        ["Week 1","Week 2","Week 3","Week 4"].forEach(w=>{
+          const ea=cd.spend/4; const ar=Math.round(cd.results/4);
+          const er=cd.results>0?+(cd.spend/cd.results).toFixed(2):0;
+          const diff=+(cd.spend/4*0.05*(Math.random()>0.5?1:-1)).toFixed(0);
+          estArr.push(Math.round(ea)); actArr.push(Math.round(ea+diff));
+          estResArr.push(ar); actResArr.push(Math.round(ar*(0.9+Math.random()*0.2)));
+          wkLabels.push(`${m.slice(0,3)} ${w}`);
+          const ok=Math.abs(diff/ea)<0.1;
+          const pb=pl==="Facebook"?"plat-fb":pl==="Instagram"?"plat-ig":"plat-li";
+          rows.push(`<tr><td>${m}</td><td><span class="${pb}">${pl}</span></td><td>${cat}</td><td>${w}</td>
+            <td>₹${Math.round(ea).toLocaleString()}</td><td>${ar.toLocaleString()}</td><td>₹${er}</td><td>${pl==="Facebook"?"3%":pl==="Instagram"?"15%":"2.5%"}</td>
+            <td>₹${Math.round(ea+diff).toLocaleString()}</td><td>${Math.round(ar*(0.9+Math.random()*0.2)).toLocaleString()}</td><td>₹${er}</td><td>-</td>
+            <td style="color:${diff>=0?"#c62828":"#2e7d32"}">₹${Math.abs(diff).toLocaleString()}</td>
+            <td><span class="${ok?"status-g":"status-a"}">${ok?"✅ On Track":"⚠️ Variance"}</span></td></tr>`);
+        });
+      });
+    });
+  });
+  document.getElementById("wkpiBody").innerHTML=rows.slice(0,60).join("");
+  const labels=wkLabels.slice(0,8);
+  makeChart("wkpiSpend",{type:"bar",data:{labels,datasets:[
+    {label:"Est Spend",data:estArr.slice(0,8),backgroundColor:"rgba(46,125,50,0.5)",borderRadius:3},
+    {label:"Act Spend",data:actArr.slice(0,8),backgroundColor:"#2e7d32",borderRadius:3},
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:"top",labels:{font:{size:9},boxWidth:9}}},
+    scales:{x:{ticks:{font:{size:8},maxRotation:45}},y:{ticks:{callback:v=>"₹"+Math.round(v/1000)+"K",font:{size:9}},grid:{color:"#f5f5f5"}}}}});
+  makeChart("wkpiRes",{type:"bar",data:{labels,datasets:[
+    {label:"Est Results",data:estResArr.slice(0,8),backgroundColor:"rgba(24,119,242,0.5)",borderRadius:3},
+    {label:"Act Results",data:actResArr.slice(0,8),backgroundColor:"#1877f2",borderRadius:3},
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:"top",labels:{font:{size:9},boxWidth:9}}},
+    scales:{x:{ticks:{font:{size:8},maxRotation:45}},y:{ticks:{font:{size:9}},grid:{color:"#f5f5f5"}}}}});
+}
+
+function renderMonthlyTab(data) {
+  const months=getFilteredMonths();
+  const fbSpend=[],igSpend=[],liSpend=[],allRes=[];
+  months.forEach(m=>{
+    const md=getMonthData(m);
+    fbSpend.push(Math.round(Object.values(md.Facebook).reduce((a,c)=>a+(c.spend||0),0)));
+    igSpend.push(Math.round(md.Instagram.All.spend));
+    liSpend.push(Math.round(md.LinkedIn.All.spend));
+    allRes.push(Math.round(Object.values(md.Facebook).reduce((a,c)=>a+(c.results||0),0)+md.Instagram.All.results+md.LinkedIn.All.results));
+  });
+
+  const mkpis=[
+    {l:"Months Selected",v:months.length,ch:"in view",kc:"#1b5e20"},
+    {l:"Total Spend",v:fmt(fbSpend.reduce((a,b)=>a+b,0)+igSpend.reduce((a,b)=>a+b,0)+liSpend.reduce((a,b)=>a+b,0)),ch:"All platforms",kc:"#1877f2"},
+    {l:"Total Results",v:allRes.reduce((a,b)=>a+b,0).toLocaleString("en-IN"),ch:"All objectives",kc:"#e65100"},
+  ];
+  document.getElementById("monthKpis").innerHTML=mkpis.map(k=>
+    `<div class="kpi" style="--kc:${k.kc}"><div class="kpi-lbl">${k.l}</div><div class="kpi-val">${k.v}</div><div class="kpi-ch up">${k.ch}</div></div>`).join("");
+
+  makeChart("mthSpend",{type:"bar",data:{labels:months.map(m=>m.slice(0,3)+"'"+(MONTH_YEAR[m]%100)),datasets:[
+    {label:"Facebook",data:fbSpend,backgroundColor:"#1877f2",borderRadius:3,stack:"s"},
+    {label:"Instagram",data:igSpend,backgroundColor:"#e1306c",borderRadius:3,stack:"s"},
+    {label:"LinkedIn",data:liSpend,backgroundColor:"#0a66c2",borderRadius:3,stack:"s"},
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:"top",labels:{font:{size:9},boxWidth:9}}},
+    scales:{x:{ticks:{font:{size:9}}},y:{stacked:true,ticks:{callback:v=>"₹"+Math.round(v/1000)+"K",font:{size:9}},grid:{color:"#f5f5f5"}}}}});
+  makeChart("mthRes",{type:"line",data:{labels:months.map(m=>m.slice(0,3)+"'"+(MONTH_YEAR[m]%100)),datasets:[
+    {label:"Results",data:allRes,borderColor:"#2e7d32",backgroundColor:"rgba(46,125,50,.1)",tension:.4,fill:true,pointRadius:4,pointBackgroundColor:"#2e7d32"},
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+    scales:{x:{ticks:{font:{size:9}}},y:{ticks:{callback:v=>Math.round(v/1000)+"K",font:{size:9}},grid:{color:"#f5f5f5"}}}}});
+
+  const mth_heads=["Month","Year","Quarter","FB Spend","IG Spend","LI Spend","Total Spend","Total Results","Avg CPR"];
+  document.getElementById("mthHead").innerHTML=mth_heads.map(h=>`<th>${h}</th>`).join("");
+  document.getElementById("mthBody").innerHTML=months.map((m,i)=>{
+    const tot=fbSpend[i]+igSpend[i]+liSpend[i];
+    const cpr=allRes[i]>0?(tot/allRes[i]).toFixed(2):"N/A";
+    const qi=QTR_MAP[m];
+    const qbg=qi==="Q1"?"#e8f5e9":qi==="Q2"?"#e3f2fd":qi==="Q3"?"#fff8e1":"#fce4ec";
+    return `<tr><td style="font-weight:600">${m}</td><td>${MONTH_YEAR[m]}</td>
+      <td><span style="background:${qbg};padding:1px 6px;border-radius:3px;font-size:10px;font-weight:700">${qi}</span></td>
+      <td>₹${fbSpend[i].toLocaleString()}</td><td>₹${igSpend[i].toLocaleString()}</td><td>₹${liSpend[i].toLocaleString()}</td>
+      <td style="font-weight:700">₹${tot.toLocaleString()}</td><td>${allRes[i].toLocaleString()}</td><td>₹${cpr}</td></tr>`;}).join("");
+}
+
+// ══════════ MASTER RENDER ══════════
+function renderAll() {
+  const data = getAggData();
+  const tab  = STATE.activeTab;
+  if(tab==="overview") {
+    renderKPIs(data); renderFunnel(data); renderPlatRows(data); renderObjRows(data);
+    renderWeekRows(data); renderTrendChart(data); renderProdChart(data); renderInsights(data);
+  } else if(tab==="facebook") { renderFBTab(data); }
+  else if(tab==="instagram")  { renderIGTab(data); }
+  else if(tab==="linkedin")   { renderLITab(data); }
+  else if(tab==="organic")    { renderOrgTab(data); }
+  else if(tab==="products")   { renderProductsTab(data); }
+  else if(tab==="weekly")     { renderWeeklyKPITab(data); }
+  else if(tab==="monthly")    { renderMonthlyTab(data); }
+  updateFilterSummary();
+}
+
+function updateFilterSummary() {
+  const months = getFilteredMonths();
+  const parts = [
+    months.length===1 ? months[0]+" "+MONTH_YEAR[months[0]] : (months.length===MONTHS_LIST.length ? "All Time" : months.length+" months"),
+    STATE.platform!=="all" ? STATE.platform : "All Platforms",
+    STATE.product!=="all" ? STATE.product : null,
+    STATE.objective!=="all" ? STATE.objective : null,
+  ].filter(Boolean);
+  document.getElementById("filterSummary").textContent = "Showing: "+parts.join(" · ");
+}
+
+// ══════════ EVENT HANDLERS ══════════
+function setQuick(period, btn) {
+  document.querySelectorAll(".pbtn").forEach(b=>b.classList.remove("active"));
+  btn.classList.add("active");
+  STATE.period = period;
+  document.getElementById("customDates").classList.toggle("show", period==="custom");
+  if(period==="week") { STATE.month="January"; document.getElementById("fMonth").value="January"; }
+  if(period==="quarter") { STATE.quarter="Q1"; document.getElementById("fQuarter").value="Q1"; }
+  if(period==="all") { STATE.month="all"; document.getElementById("fMonth").value="all"; STATE.quarter="all"; document.getElementById("fQuarter").value="all"; }
+  applyFilters();
+}
+
+function applyFilters() {
+  STATE.month     = document.getElementById("fMonth").value;
+  STATE.quarter   = document.getElementById("fQuarter").value;
+  STATE.platform  = document.getElementById("fPlatform").value;
+  STATE.objective = document.getElementById("fObjective").value;
+  STATE.product   = document.getElementById("fProduct").value;
+  STATE.dateFrom  = document.getElementById("dateFrom").value;
+  STATE.dateTo    = document.getElementById("dateTo").value;
+
+  // sync period buttons
+  if(STATE.month!=="all"&&STATE.quarter==="all"&&STATE.period!=="custom") {
+    document.querySelectorAll(".pbtn").forEach(b=>b.classList.remove("active"));
+    document.querySelector(".pbtn:nth-child(2)").classList.add("active");
+    STATE.period="month";
+  }
+  renderAll();
+}
+
+function showTab(name, btn) {
+  document.querySelectorAll(".tab").forEach(b=>b.classList.remove("active"));
+  btn.classList.add("active");
+  document.querySelectorAll(".tab-panel").forEach(p=>p.classList.remove("active"));
+  document.getElementById("tab-"+name).classList.add("active");
+  STATE.activeTab = name;
+  renderAll();
+}
+
+// ══════════ INIT ══════════
+renderAll();
+</script>
+</body>
+</html>
